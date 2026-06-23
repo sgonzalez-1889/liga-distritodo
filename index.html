@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#050e1f">
+<title>Ranking de Ventas – Mundial 2026 | Ferrotodo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@300;400;600;700&family=Roboto:wght@300;400;500&display=swap');
+
+/* ── TOKENS ── */
+:root{
+  --g1:#FFE040;--g2:#FFA000;--g3:#FF6D00;
+  --r1:#E53935;--r2:#B71C1C;
+  --b1:#0D47A1;--b2:#050e1f;--b3:#0a1929;--b4:#112240;
+  --gr:#00C853;
+  --txt:#E8F0FF;--muted:#5a7aaa;
+  --card:rgba(13,28,58,0.85);
+  --border:rgba(255,224,64,0.18);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Roboto',sans-serif;background:var(--b2);color:var(--txt);overflow-x:hidden}
+
+/* ══════════════════════════════════
+   BACKGROUND — campo de fútbol
+══════════════════════════════════ */
+body::before{
+  content:'';
+  position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%,rgba(13,71,161,0.35) 0%,transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%,rgba(0,100,40,0.2) 0%,transparent 70%),
+    var(--b2);
+  pointer-events:none;
+}
+
+/* líneas de cancha decorativas */
+body::after{
+  content:'';
+  position:fixed;inset:0;z-index:0;
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 79px,rgba(255,255,255,0.025) 79px,rgba(255,255,255,0.025) 80px),
+    repeating-linear-gradient(90deg,transparent,transparent 79px,rgba(255,255,255,0.025) 79px,rgba(255,255,255,0.025) 80px);
+  pointer-events:none;
+}
+
+/* ══════════════════════════════════
+   BOLA FLOTANTE (decorativa)
+══════════════════════════════════ */
+.soccer-ball{
+  position:fixed;z-index:0;font-size:60px;
+  opacity:.04;pointer-events:none;
+  animation:ballFloat 20s linear infinite;
+}
+.soccer-ball:nth-child(2){left:5%;animation-duration:24s;animation-delay:-6s}
+.soccer-ball:nth-child(3){left:80%;animation-duration:18s;animation-delay:-12s;font-size:90px}
+.soccer-ball:nth-child(4){left:45%;animation-duration:30s;animation-delay:-18s;font-size:40px}
+@keyframes ballFloat{
+  0%  {bottom:-100px;transform:rotate(0deg)}
+  100%{bottom:110%;transform:rotate(540deg)}
+}
+
+/* ══════════════════════════════════
+   WRAPPER
+══════════════════════════════════ */
+#app{position:relative;z-index:1;min-height:100vh}
+
+/* ══════════════════════════════════
+   ██ LOGIN SCREEN
+══════════════════════════════════ */
+#loginScreen{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  padding:24px 16px;
+  text-align:center;
+}
+
+/* banda superior tricolor */
+.tricolor{
+  position:fixed;top:0;left:0;right:0;
+  height:5px;
+  background:linear-gradient(90deg,#E53935 0%,#E53935 33%,#FFE040 33%,#FFE040 66%,#1565C0 66%);
+  z-index:99;
+}
+
+/* medalla trofeo central */
+.login-trophy{
+  font-size:90px;
+  display:block;
+  margin-bottom:12px;
+  animation:pulsoTrofeo 2.5s ease-in-out infinite;
+  filter:drop-shadow(0 0 30px rgba(255,160,0,.6));
+}
+@keyframes pulsoTrofeo{
+  0%,100%{transform:scale(1) translateY(0);filter:drop-shadow(0 0 20px rgba(255,160,0,.5))}
+  50%{transform:scale(1.07) translateY(-6px);filter:drop-shadow(0 0 45px rgba(255,224,64,.9))}
+}
+
+.login-org{
+  font-family:'Oswald',sans-serif;
+  font-size:12px;letter-spacing:5px;
+  color:var(--muted);text-transform:uppercase;
+  margin-bottom:4px;
+}
+
+.login-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(42px,9vw,88px);
+  letter-spacing:4px;line-height:.9;
+  background:linear-gradient(170deg,#FFE040 0%,#FFA000 55%,#FF6D00 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  margin-bottom:6px;
+}
+
+.login-year{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(18px,4vw,32px);
+  letter-spacing:10px;
+  color:rgba(255,255,255,.18);
+  margin-bottom:20px;
+}
+
+/* pill rojo "FIFA WORLD CUP 2026" */
+.wc-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,#B71C1C,#E53935);
+  border:1px solid rgba(255,100,100,.3);
+  color:#fff;
+  font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:3px;
+  padding:6px 20px;border-radius:30px;
+  margin-bottom:32px;
+  box-shadow:0 4px 16px rgba(229,57,53,.35);
+}
+
+/* sede ciudades */
+.sedes{
+  display:flex;gap:6px;flex-wrap:wrap;justify-content:center;
+  margin-bottom:32px;max-width:380px;
+}
+.sede{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:6px;
+  font-family:'Oswald',sans-serif;
+  font-size:10px;letter-spacing:1px;
+  color:rgba(255,255,255,.4);
+  padding:3px 8px;
+}
+
+/* card login */
+.login-card{
+  width:100%;max-width:400px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:32px 28px 28px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 24px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05);
+  position:relative;overflow:hidden;
+}
+
+.login-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));
+}
+
+.lock-emoji{font-size:32px;display:block;margin-bottom:10px}
+
+.lc-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:22px;letter-spacing:3px;color:var(--g1);
+  margin-bottom:4px;
+}
+.lc-hint{font-size:12px;color:var(--muted);margin-bottom:22px;letter-spacing:.3px}
+
+.pwd-wrap{position:relative;margin-bottom:14px}
+
+.pwd-inp{
+  width:100%;
+  background:rgba(255,255,255,.04);
+  border:1.5px solid rgba(255,224,64,.2);
+  border-radius:12px;
+  padding:14px 48px 14px 18px;
+  color:var(--txt);
+  font-family:'Oswald',sans-serif;font-size:18px;letter-spacing:4px;
+  outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.pwd-inp::placeholder{font-size:13px;letter-spacing:2px;color:rgba(90,122,170,.5)}
+.pwd-inp:focus{border-color:var(--g1);box-shadow:0 0 0 3px rgba(255,224,64,.1)}
+.pwd-inp.err{border-color:var(--r1);box-shadow:0 0 0 3px rgba(229,57,53,.15);animation:shake .4s}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}
+}
+
+.eye-btn{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;
+  font-size:18px;color:var(--muted);padding:4px;
+  transition:color .2s;
+}
+.eye-btn:hover{color:var(--g1)}
+
+.btn-ingresar{
+  width:100%;
+  background:linear-gradient(135deg,var(--g1),var(--g2));
+  color:#050e1f;
+  font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;
+  padding:14px;border-radius:12px;border:none;cursor:pointer;
+  transition:all .2s;
+  box-shadow:0 4px 20px rgba(255,160,0,.3);
+}
+.btn-ingresar:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(255,160,0,.5)}
+.btn-ingresar:active{transform:translateY(0)}
+
+.err-msg{
+  display:none;
+  color:#FF5252;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;
+  margin-top:12px;
+}
+.err-msg.on{display:block;animation:fadeUp .3s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══════════════════════════════════
+   ██ MAIN APP
+══════════════════════════════════ */
+#mainApp{display:none}
+
+/* logout */
+.btn-logout{
+  position:fixed;top:14px;right:14px;z-index:200;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  color:rgba(255,255,255,.4);
+  font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:2px;
+  padding:7px 16px;border-radius:20px;cursor:pointer;
+  transition:all .2s;
+}
+.btn-logout:hover{background:rgba(229,57,53,.2);color:#FF5252;border-color:rgba(229,57,53,.3)}
+
+/* ── HEADER ── */
+.main-header{
+  position:relative;
+  padding:40px 20px 28px;
+  text-align:center;
+  overflow:hidden;
+}
+
+/* arco de estadio */
+.stadium-arc{
+  position:absolute;
+  bottom:-1px;left:50%;transform:translateX(-50%);
+  width:120%;height:200px;
+  background:rgba(0,40,20,.15);
+  border-radius:50% 50% 0 0;
+  border-top:2px solid rgba(255,255,255,.07);
+  pointer-events:none;
+}
+
+/* punto central cancha */
+.center-circle{
+  position:absolute;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  width:280px;height:280px;
+  border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.04);
+  pointer-events:none;
+}
+
+/* banda arcoiris animada */
+.rainbow-bar{
+  position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,
+    #E53935,#FF9800,#FFE040,#00C853,#1565C0,#9C27B0,#E53935);
+  background-size:300% 100%;
+  animation:rainbowMove 5s linear infinite;
+}
+@keyframes rainbowMove{0%{background-position:0%}100%{background-position:300%}}
+
+.hdr-label{
+  font-family:'Oswald',sans-serif;font-size:11px;
+  letter-spacing:6px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:8px;
+}
+
+/* copa grande */
+.hdr-cup{font-size:72px;display:block;margin-bottom:8px;filter:drop-shadow(0 0 24px rgba(255,160,0,.6))}
+
+.hdr-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(44px,8vw,96px);letter-spacing:5px;
+  line-height:.9;
+  background:linear-gradient(170deg,#FFE040 0%,#FFA000 55%,#FF6D00 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:6px;
+}
+.hdr-sub{
+  font-family:'Oswald',sans-serif;font-size:clamp(11px,2.5vw,15px);
+  letter-spacing:7px;color:var(--muted);text-transform:uppercase;
+  margin-bottom:10px;
+}
+.hdr-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:linear-gradient(135deg,rgba(229,57,53,.2),rgba(183,28,28,.3));
+  border:1px solid rgba(229,57,53,.35);color:#FF8A80;
+  font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:3px;
+  padding:4px 16px;border-radius:20px;margin-bottom:24px;
+}
+
+/* marcador tipo estadio */
+.scoreboard{
+  display:inline-flex;align-items:stretch;
+  background:#000;
+  border:2px solid rgba(255,224,64,.25);
+  border-radius:10px;overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);
+  margin-bottom:8px;
+}
+.sb-team{
+  font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;
+  padding:8px 16px;color:rgba(255,255,255,.6);
+  display:flex;align-items:center;gap:6px;
+}
+.sb-sep{
+  background:rgba(255,224,64,.1);
+  border-left:1px solid rgba(255,224,64,.2);border-right:1px solid rgba(255,224,64,.2);
+  font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--g1);
+  padding:8px 14px;display:flex;align-items:center;
+}
+
+/* ── UPLOAD ── */
+.upload-wrap{max-width:540px;margin:28px auto;padding:0 16px}
+
+.upload-zone{
+  border:2px dashed rgba(255,224,64,.35);
+  border-radius:20px;padding:32px 20px;
+  text-align:center;cursor:pointer;
+  background:linear-gradient(145deg,rgba(13,28,58,.7),rgba(5,14,31,.85));
+  backdrop-filter:blur(10px);
+  transition:all .25s;
+  position:relative;overflow:hidden;
+}
+.upload-zone .bg-ball{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:140px;opacity:.025;pointer-events:none;line-height:1;
+}
+.upload-zone:hover,.upload-zone.on{
+  border-color:var(--g1);
+  background:linear-gradient(145deg,rgba(20,40,80,.8),rgba(13,28,58,.9));
+  box-shadow:0 0 32px rgba(255,224,64,.12);
+}
+
+.uz-icon{font-size:44px;display:block;margin-bottom:10px}
+.uz-title{
+  font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;
+  color:var(--g1);margin-bottom:4px;
+}
+.uz-hint{font-size:12px;color:var(--muted);margin-bottom:18px}
+
+.btn-cargar{
+  display:inline-flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,var(--g1),var(--g2));
+  color:#050e1f;
+  font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;
+  padding:12px 30px;border-radius:30px;border:none;cursor:pointer;
+  transition:all .2s;
+}
+.btn-cargar:hover{transform:scale(1.05);box-shadow:0 0 24px rgba(255,160,0,.4)}
+#fileIn{display:none}
+
+.file-ok{
+  display:none;align-items:center;justify-content:center;gap:8px;
+  margin-top:14px;padding:10px 18px;
+  background:rgba(0,200,83,.1);border:1px solid rgba(0,200,83,.3);
+  border-radius:10px;color:var(--gr);
+  font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1px;
+}
+
+/* ── STATS ── */
+.stats-row{
+  display:none;max-width:960px;margin:0 auto 28px;padding:0 16px;
+  gap:10px;flex-wrap:wrap;justify-content:center;
+}
+.sc{
+  flex:1;min-width:130px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;padding:14px 12px;
+  text-align:center;backdrop-filter:blur(8px);
+  position:relative;overflow:hidden;
+}
+.sc::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--g1),transparent);opacity:.3;
+}
+.sc-ico{font-size:22px;margin-bottom:2px}
+.sc-num{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--g1);line-height:1}
+.sc-lbl{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+
+/* ── RANKING ── */
+.ranking-wrap{
+  display:none;max-width:1180px;margin:0 auto;padding:0 16px 56px;
+}
+.ranking-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:720px){.ranking-grid{grid-template-columns:1fr}}
+
+.panel{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:20px;overflow:hidden;
+  box-shadow:0 16px 48px rgba(0,0,0,.55);
+  backdrop-filter:blur(12px);
+}
+
+/* panel header */
+.ph{
+  padding:18px 20px;
+  display:flex;align-items:center;gap:12px;
+  position:relative;overflow:hidden;
+}
+.ph::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+}
+.ph.ferr{background:linear-gradient(135deg,#3E2000,#6D3400)}
+.ph.ferr::after{background:linear-gradient(90deg,transparent,#CD7F32,transparent)}
+.ph.cli{background:linear-gradient(135deg,#0D2550,#1A3A80)}
+.ph.cli::after{background:linear-gradient(90deg,transparent,var(--g1),transparent)}
+.ph-ico{font-size:32px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+.ph-text{flex:1}
+.ph-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;line-height:1}
+.ph-sub{font-size:10px;letter-spacing:2px;opacity:.5;text-transform:uppercase;margin-top:2px}
+.ph-cnt{
+  background:rgba(0,0,0,.3);
+  font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1px;
+  padding:4px 10px;border-radius:20px;color:rgba(255,255,255,.5);
+}
+
+/* PODIO */
+.podio{
+  padding:18px 14px 12px;
+  display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:8px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.podio-item{
+  text-align:center;padding:12px 6px;border-radius:14px;
+  transition:transform .2s;cursor:default;
+}
+.podio-item:hover{transform:translateY(-3px)}
+.po-1{background:linear-gradient(180deg,rgba(255,224,64,.12),rgba(255,224,64,.03));border:1px solid rgba(255,224,64,.2)}
+.po-2{background:linear-gradient(180deg,rgba(192,192,192,.09),rgba(192,192,192,.02));border:1px solid rgba(192,192,192,.15)}
+.po-3{background:linear-gradient(180deg,rgba(205,127,50,.09),rgba(205,127,50,.02));border:1px solid rgba(205,127,50,.15)}
+.p-medal{font-size:28px;display:block;margin-bottom:6px}
+.p-avatar{
+  width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Oswald',sans-serif;font-weight:700;font-size:15px;
+  margin:0 auto 6px;
+}
+.av1{background:linear-gradient(135deg,#FFE040,#FFA000);color:#050e1f;box-shadow:0 0 14px rgba(255,160,0,.5)}
+.av2{background:linear-gradient(135deg,#CFD8DC,#90A4AE);color:#050e1f}
+.av3{background:linear-gradient(135deg,#CD7F32,#A0522D);color:#fff}
+.av-ferr-1{background:linear-gradient(135deg,#FF8F00,#E65100);color:#fff;box-shadow:0 0 14px rgba(255,143,0,.4)}
+.av-cli-1{background:linear-gradient(135deg,#1976D2,#0D47A1);color:#fff;box-shadow:0 0 14px rgba(25,118,210,.4)}
+.p-name{font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.p-pts{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--g1);line-height:1}
+.p-lbl{font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+
+/* LISTA 4-10 */
+.lista{padding:6px 0}
+.li{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 16px;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  transition:background .15s;
+  animation:liSlide .35s ease both;
+}
+.li:hover{background:rgba(255,224,64,.04)}
+.li:last-child{border-bottom:none}
+@keyframes liSlide{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:translateX(0)}}
+.li:nth-child(1){animation-delay:.03s}.li:nth-child(2){animation-delay:.06s}
+.li:nth-child(3){animation-delay:.09s}.li:nth-child(4){animation-delay:.12s}
+.li:nth-child(5){animation-delay:.15s}.li:nth-child(6){animation-delay:.18s}
+.li:nth-child(7){animation-delay:.21s}
+
+.li-num{
+  width:26px;height:26px;border-radius:50%;flex-shrink:0;
+  background:rgba(255,255,255,.05);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--muted);
+}
+.li-av{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;
+}
+.li-av.f{background:linear-gradient(135deg,#7B3F00,#D97706)}
+.li-av.c{background:linear-gradient(135deg,#1E40AF,#2563EB)}
+
+.li-info{flex:1;min-width:0}
+.li-name{font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-bar{height:2px;background:rgba(255,255,255,.05);border-radius:2px;margin-top:4px}
+.li-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,rgba(255,224,64,.45),rgba(255,160,0,.25))}
+
+.li-r{text-align:right;flex-shrink:0}
+.li-pts{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--g1);line-height:1}
+.li-pl{font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+
+.empty{padding:28px;text-align:center;color:var(--muted);font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:20px;left:50%;
+  transform:translateX(-50%) translateY(70px);
+  background:rgba(229,57,53,.95);color:#fff;
+  font-family:'Oswald',sans-serif;font-size:13px;letter-spacing:1px;
+  padding:10px 22px;border-radius:30px;
+  transition:transform .3s;z-index:9999;
+  backdrop-filter:blur(8px);
+}
+.toast.on{transform:translateX(-50%) translateY(0)}
+
+/* ── FOOTER ── */
+.footer{
+  text-align:center;padding:16px;
+  color:rgba(255,255,255,.15);font-size:10px;letter-spacing:3px;
+  border-top:1px solid rgba(25
